@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: user-service
+  profiles:
+    active: h2
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8081

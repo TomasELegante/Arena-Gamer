@@ -1,5 +1,9 @@
 package com.example.userservice.controller;
 
+import com.example.userservice.dto.UserCommand;
+import com.example.userservice.dto.UserRequest;
+import com.example.userservice.dto.UserResponse;
+import com.example.userservice.dto.UserResult;
 import com.example.userservice.model.User;
 import com.example.userservice.service.UserService;
 import jakarta.validation.Valid;
@@ -20,25 +24,29 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getAll() {
-        return ResponseEntity.ok(userService.findAll());
+    public ResponseEntity<List<UserResponse>> getAll() {
+        return ResponseEntity.ok(
+                userService.findAll().stream()
+                        .map(this::toResponse)
+                        .toList()
+        );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.findById(id));
+    public ResponseEntity<UserResponse> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(toResponse(userService.findById(id)));
     }
 
     @PostMapping
-    public ResponseEntity<User> create(@Valid @RequestBody User user) {
-        User creado = userService.create(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    public ResponseEntity<UserResponse> create(@Valid @RequestBody UserRequest request) {
+        UserResult result = userService.create(toCommand(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(result));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> update(@PathVariable Long id,
-                                       @Valid @RequestBody User user) {
-        return ResponseEntity.ok(userService.update(id, user));
+    public ResponseEntity<UserResponse> update(@PathVariable Long id,
+                                               @Valid @RequestBody UserRequest request) {
+        return ResponseEntity.ok(toResponse(userService.update(id, toCommand(request))));
     }
 
     @DeleteMapping("/{id}")
@@ -48,12 +56,38 @@ public class UserController {
     }
 
     @GetMapping("/role/{role}")
-    public ResponseEntity<List<User>> getByRole(@PathVariable User.Role role) {
-        return ResponseEntity.ok(userService.findByRole(role));
+    public ResponseEntity<List<UserResponse>> getByRole(@PathVariable User.Role role) {
+        return ResponseEntity.ok(
+                userService.findByRole(role).stream()
+                        .map(this::toResponse)
+                        .toList()
+        );
     }
 
     @GetMapping("/active")
-    public ResponseEntity<List<User>> getActivos() {
-        return ResponseEntity.ok(userService.findActivos());
+    public ResponseEntity<List<UserResponse>> getActivos() {
+        return ResponseEntity.ok(
+                userService.findActivos().stream()
+                        .map(this::toResponse)
+                        .toList()
+        );
+    }
+
+    private UserCommand toCommand(UserRequest request) {
+        return new UserCommand(
+                request.getUsername(),
+                request.getEmail(),
+                request.getRole()
+        );
+    }
+
+    private UserResponse toResponse(UserResult result) {
+        return new UserResponse(
+                result.id(),
+                result.username(),
+                result.email(),
+                result.role(),
+                result.active()
+        );
     }
 }

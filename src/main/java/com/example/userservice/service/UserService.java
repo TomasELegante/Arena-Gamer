@@ -1,5 +1,7 @@
 package com.example.userservice.service;
 
+import com.example.userservice.dto.UserCommand;
+import com.example.userservice.dto.UserResult;
 import com.example.userservice.model.User;
 import com.example.userservice.repository.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -17,34 +19,44 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public List<User> findAll() {
-        return userRepository.findAll();
+    public List<UserResult> findAll() {
+        return userRepository.findAll().stream()
+                .map(this::toResult)
+                .toList();
     }
 
-    public User findById(Long id) {
+    public UserResult findById(Long id) {
         return userRepository.findById(id)
+                .map(this::toResult)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Usuario no encontrado con id: " + id));
     }
 
-    public User create(User user) {
-        if (userRepository.existsByUsername(user.getUsername())) {
+    public UserResult create(UserCommand command) {
+        if (userRepository.existsByUsername(command.username())) {
             throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "El username ya está en uso: " + user.getUsername());
+                    HttpStatus.CONFLICT, "El username ya está en uso: " + command.username());
         }
-        if (userRepository.existsByEmail(user.getEmail())) {
+        if (userRepository.existsByEmail(command.email())) {
             throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "El email ya está registrado: " + user.getEmail());
+                    HttpStatus.CONFLICT, "El email ya está registrado: " + command.email());
         }
-        return userRepository.save(user);
+        User user = new User();
+        user.setUsername(command.username());
+        user.setEmail(command.email());
+        user.setRole(User.Role.valueOf(command.role()));
+        user.setActive(true);
+        return toResult(userRepository.save(user));
     }
 
-    public User update(Long id, User datos) {
-        User existente = findById(id);
-        existente.setUsername(datos.getUsername());
-        existente.setEmail(datos.getEmail());
-        existente.setRole(datos.getRole());
-        return userRepository.save(existente);
+    public UserResult update(Long id, UserCommand command) {
+        User existente = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Usuario no encontrado con id: " + id));
+        existente.setUsername(command.username());
+        existente.setEmail(command.email());
+        existente.setRole(User.Role.valueOf(command.role()));
+        return toResult(userRepository.save(existente));
     }
 
     public void delete(Long id) {
@@ -55,11 +67,25 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
-    public List<User> findByRole(User.Role role) {
-        return userRepository.findByRole(role);
+    public List<UserResult> findByRole(User.Role role) {
+        return userRepository.findByRole(role).stream()
+                .map(this::toResult)
+                .toList();
     }
 
-    public List<User> findActivos() {
-        return userRepository.findByActiveTrue();
+    public List<UserResult> findActivos() {
+        return userRepository.findByActiveTrue().stream()
+                .map(this::toResult)
+                .toList();
+    }
+
+    private UserResult toResult(User user) {
+        return new UserResult(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getRole().name(),
+                user.isActive()
+        );
     }
 }

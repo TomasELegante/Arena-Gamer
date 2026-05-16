@@ -16,8 +16,25 @@ public class DataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        userRepository.save(new User("shadow99",   "shadow99@gmail.com",  User.Role.PLAYER));
-        userRepository.save(new User("nitro_king", "nitro@arenagamer.cl", User.Role.PLAYER));
-        userRepository.save(new User("admin_leo",  "leo@arenagamer.cl",   User.Role.STAFF));
+        if (userRepository.count() == 0) {
+            User u1 = new User();
+            u1.setUsername("shadow99");
+            u1.setEmail("shadow99@gmail.com");
+            u1.setRole(User.Role.PLAYER);
+
+            User u2 = new User();
+            u2.setUsername("nitro_king");
+            u2.setEmail("nitro@arenagamer.cl");
+            u2.setRole(User.Role.PLAYER);
+
+            User u3 = new User();
+            u3.setUsername("admin_leo");
+            u3.setEmail("leo@arenagamer.cl");
+            u3.setRole(User.Role.STAFF);
+
+            userRepository.save(u1);
+            userRepository.save(u2);
+            userRepository.save(u3);
+        }
     }
 }
